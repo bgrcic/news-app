@@ -4,6 +4,7 @@ package com.example.myapplication.ui
 
 import DetailsScreen
 import android.annotation.SuppressLint
+import android.util.Log
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -20,6 +21,7 @@ import androidx.navigation.navArgument
 import com.example.myapplication.BottomMenuScreen
 import com.example.myapplication.MockData
 import com.example.myapplication.components.BottomMenu
+import com.example.myapplication.network.NewsManager
 import com.example.myapplication.ui.screen.Categories
 import com.example.myapplication.ui.screen.Sources
 import com.example.myapplication.ui.screen.TopNews
@@ -44,7 +46,10 @@ fun MainScreen(navController: NavHostController, scrollState: ScrollState) {
 }
 
 @Composable
-fun Navigation(navController: NavHostController, scrollState: ScrollState) {
+fun Navigation(navController: NavHostController, scrollState: ScrollState, newsManager: NewsManager = NewsManager()) {
+    val articles = newsManager.newsResponse.value.articles
+    Log.d("news", "$articles")
+
     NavHost(navController = navController, startDestination = "TopNews") {
         bottomNavigation(navController = navController)
         composable("TopNews") {
@@ -65,10 +70,10 @@ fun NavGraphBuilder.bottomNavigation(navController: NavController) {
     composable(BottomMenuScreen.TopNews.route) {
         TopNews(navController = navController)
     }
-    composable(BottomMenuScreen.TopNews.route) {
+    composable(BottomMenuScreen.Categories.route) {
         Categories()
     }
-    composable(BottomMenuScreen.TopNews.route) {
+    composable(BottomMenuScreen.Sources.route) {
         Sources()
     }
 }
