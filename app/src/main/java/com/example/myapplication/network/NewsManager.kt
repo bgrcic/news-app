@@ -2,10 +2,13 @@ package com.example.myapplication.network
 
 import android.util.Log
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import com.example.myapplication.model.ArticleCategory
 import com.example.myapplication.model.TopNewsResponse
+import com.example.myapplication.model.getArticleCategory
 import retrofit2.Call
 import retrofit2.Callback
 
@@ -18,6 +21,8 @@ class NewsManager {
         @Composable get() = remember {
             _newsResponse
         }
+
+    val selectedCategory: MutableState<ArticleCategory?> = mutableStateOf(null)
 
     init {
         getArticles()
@@ -42,5 +47,10 @@ class NewsManager {
                 Log.d("error", "${t.printStackTrace()}")
             }
         })
+    }
+
+    fun onSelectedCategoryChanged(category:String){
+        val newCategory = getArticleCategory(category = category)
+        selectedCategory.value = newCategory
     }
 }
