@@ -58,6 +58,8 @@ dependencies {
     implementation("com.squareup.retrofit2:converter-moshi:2.9.0")
     implementation("com.squareup.moshi:moshi-kotlin:1.9.3")
 
+    implementation ("com.github.skydoves:landscapist-coil:1.4.1")
+
 
     implementation("androidx.compose.material:material-icons-extended:1.5.4")
     implementation("androidx.compose.material:material:1.5.4")
