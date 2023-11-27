@@ -17,8 +17,11 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -29,10 +32,12 @@ import com.example.myapplication.MockData
 import com.example.myapplication.MockData.getTimeAgo
 import com.example.myapplication.NewsData
 import com.example.myapplication.R
+import com.example.myapplication.model.TopNewsArticle
+import com.skydoves.landscapist.coil.CoilImage
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DetailsScreen(newsData: NewsData, scrollState: ScrollState, navController: NavController) {
+fun DetailsScreen(article: TopNewsArticle, scrollState: ScrollState, navController: NavController) {
     Scaffold(topBar = {
         DetailsTopAppBar(onBackPressed = { navController.popBackStack() })
     }) { innerPadding ->
@@ -44,24 +49,29 @@ fun DetailsScreen(newsData: NewsData, scrollState: ScrollState, navController: N
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
 
-            Image(painter = painterResource(id = newsData.image), contentDescription = "")
+            CoilImage(
+                imageModel = article.urlToImage,
+                contentScale = ContentScale.Crop,
+                error = ImageBitmap.imageResource(R.drawable.breaking_news),
+                placeHolder = ImageBitmap.imageResource(R.drawable.breaking_news)
+            )
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(8.dp), horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                InfoWithIcon(Icons.Default.Edit, info = newsData.author)
+                InfoWithIcon(Icons.Default.Edit, info = article.author ?: "Not Available")
                 InfoWithIcon(
                     icon = Icons.Default.DateRange,
-                    info = MockData.stringToDate(newsData.publishedAt).getTimeAgo()
+                    info = MockData.stringToDate(article.publishedAt!!).getTimeAgo()
                 )
             }
             Text(
-                text = newsData.title,
+                text = article.title ?: "Not Available",
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(start = 20.dp, top = 16.dp, end = 20.dp, bottom = 16.dp)
             )
-            Text(text = newsData.description, modifier = Modifier.padding(16.dp))
+            Text(text = article.description ?: "Not Available", modifier = Modifier.padding(16.dp))
         }
     }
 }
@@ -96,8 +106,7 @@ fun InfoWithIcon(icon: ImageVector, info: String) {
 @Composable
 fun DetailScreenPreview() {
     DetailsScreen(
-        NewsData(
-            2,
+        TopNewsArticle(
             author = "Namita Singh",
             title = "Cleo Smith news — live: Kidnap suspect 'in hospital again' as 'hard police grind' credited for breakthrough - The Independent",
             description = "The suspected kidnapper of four-year-old Cleo Smith has been treated in hospital for a second time amid reports he was “attacked” while in custody.",
