@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -26,18 +27,33 @@ import androidx.navigation.NavController
 import com.example.myapplication.MockData
 import com.example.myapplication.MockData.getTimeAgo
 import com.example.myapplication.R
+import com.example.myapplication.components.SearchBar
 import com.example.myapplication.model.TopNewsArticle
+import com.example.myapplication.network.NewsManager
 import com.skydoves.landscapist.coil.CoilImage
 
 @Composable
-fun TopNews(navController: NavController,articles : List <TopNewsArticle>) {
-    Column(modifier = Modifier.fillMaxSize(),horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(text = "Top News",fontWeight = FontWeight.SemiBold)
-        LazyColumn{
-            items(articles.size){index->
+fun TopNews(
+    navController: NavController,
+    articles: List<TopNewsArticle>,
+    query: MutableState<String>,
+    newsManager: NewsManager
+) {
+    Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
+        //Text(text = "Top News",fontWeight = FontWeight.SemiBold)
+        SearchBar(query = query, newsManager = newsManager)
+        val searchedText = query.value
+        val resultsList = mutableListOf<TopNewsArticle>()
+        if (searchedText != "") {
+            resultsList.addAll(newsManager.searchedNewsResponse.value.articles ?: articles)
+        }else{
+            resultsList.addAll(articles)
+        }
+        LazyColumn {
+            items(resultsList.size) { index ->
                 TopNewsItem(
-                    article =articles[index],
-                    onNewsClick = {  navController.navigate("Details/$index")}
+                    article = resultsList[index],
+                    onNewsClick = { navController.navigate("Details/$index") }
                 )
             }
         }
@@ -45,7 +61,7 @@ fun TopNews(navController: NavController,articles : List <TopNewsArticle>) {
 }
 
 @Composable
-fun TopNewsItem(article: TopNewsArticle,onNewsClick: () -> Unit = {},) {
+fun TopNewsItem(article: TopNewsArticle, onNewsClick: () -> Unit = {}) {
     Box(modifier = Modifier
         .height(200.dp)
         .padding(8.dp).clickable {
@@ -57,15 +73,27 @@ fun TopNewsItem(article: TopNewsArticle,onNewsClick: () -> Unit = {},) {
             error = ImageBitmap.imageResource(R.drawable.breaking_news),
             placeHolder = ImageBitmap.imageResource(R.drawable.breaking_news)
         )
-        Column(modifier = Modifier
-            .wrapContentHeight()
-            .padding(top = 16.dp, start = 16.dp),verticalArrangement = Arrangement.SpaceBetween) {
-            Text(text =  MockData.stringToDate(article.publishedAt!!).getTimeAgo(),color = Color.White,fontWeight = FontWeight.SemiBold)
+        Column(
+            modifier = Modifier
+                .wrapContentHeight()
+                .padding(top = 16.dp, start = 16.dp), verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            article.publishedAt?.let {
+                Text(
+                    text = MockData.stringToDate(article.publishedAt).getTimeAgo(),
+                    color = Color.White,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
             Spacer(modifier = Modifier.height(100.dp))
-            Text(text = article.title!!, color = Color.White, fontWeight = FontWeight.SemiBold,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis
-            )
+
+            article.title?.let {
+                Text(
+                    text = article.title, color = Color.White, fontWeight = FontWeight.SemiBold,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
         }
     }
 }
@@ -74,10 +102,12 @@ fun TopNewsItem(article: TopNewsArticle,onNewsClick: () -> Unit = {},) {
 @Preview(showBackground = true)
 @Composable
 fun TopNewsPreview() {
-    TopNewsItem(  TopNewsArticle(
-        author = "Namita Singh",
-        title = "Cleo Smith news — live: Kidnap suspect 'in hospital again' as 'hard police grind' credited for breakthrough - The Independent",
-        description = "The suspected kidnapper of four-year-old Cleo Smith has been treated in hospital for a second time amid reports he was “attacked” while in custody.",
-        publishedAt = "2021-11-04T04:42:40Z"
-    ))
+    TopNewsItem(
+        TopNewsArticle(
+            author = "Namita Singh",
+            title = "Cleo Smith news — live: Kidnap suspect 'in hospital again' as 'hard police grind' credited for breakthrough - The Independent",
+            description = "The suspected kidnapper of four-year-old Cleo Smith has been treated in hospital for a second time amid reports he was “attacked” while in custody.",
+            publishedAt = "2021-11-04T04:42:40Z"
+        )
+    )
 }
