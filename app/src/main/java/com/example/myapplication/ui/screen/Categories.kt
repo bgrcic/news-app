@@ -16,6 +16,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.colorResource
@@ -27,28 +29,49 @@ import androidx.compose.ui.unit.dp
 import com.example.myapplication.MockData
 import com.example.myapplication.MockData.getTimeAgo
 import com.example.myapplication.R
+import com.example.myapplication.components.ErorrUI
+import com.example.myapplication.components.LoadingUI
 import com.example.myapplication.model.TopNewsArticle
 import com.example.myapplication.model.getAllArticleCategory
-import com.example.myapplication.network.NewsManager
+import com.example.myapplication.ui.MainViewModel
 import com.skydoves.landscapist.coil.CoilImage
 
 @Composable
-fun Categories(onFetchCategory:(String)->Unit={},newsManager: NewsManager) {
+fun Categories(
+    onFetchCategory: (String) -> Unit = {}, viewModel: MainViewModel,
+    isLoading: MutableState<Boolean>, isError: MutableState<Boolean>
+) {
     val tabsItems = getAllArticleCategory()
     Column {
-        LazyRow() {
-            items(tabsItems.size) {
-                val category = tabsItems[it]
-                CategoryTab(
-                    category = category.categoryName, onFetchCategory = onFetchCategory,
-                    isSelected =
-                    newsManager.selectedCategory.value == category
-                )
+        when {
+            isLoading.value -> {
+                LoadingUI()
+            }
+
+            isError.value -> {
+                ErorrUI()
+            }
+
+            else -> {
+                LazyRow {
+                    items(tabsItems.size) {
+                        val category = tabsItems[it]
+                        CategoryTab(
+                            category = category.categoryName, onFetchCategory = onFetchCategory,
+                            isSelected =
+                            viewModel.selectedCategory.collectAsState().value == category
+                        )
+                    }
+                }
             }
         }
-        ArticleContent(articles = newsManager.getArticleByCategory.value.articles ?: listOf())
+
+        ArticleContent(
+            articles = viewModel.getArticleByCategory.collectAsState().value.articles ?: listOf()
+        )
     }
 }
+
 @Composable
 fun CategoryTab(
     category: String,
@@ -79,23 +102,43 @@ fun CategoryTab(
 }
 
 @Composable
-fun ArticleContent(articles: List<TopNewsArticle>, modifier:Modifier = Modifier) {
-    LazyColumn{
-        items(articles){article->
-            Card(modifier.padding(8.dp),border = BorderStroke(2.dp,color = colorResource(id = R.color.purple_500))) {
+fun ArticleContent(articles: List<TopNewsArticle>, modifier: Modifier = Modifier) {
+    LazyColumn {
+        items(articles) { article ->
+            Card(
+                modifier.padding(8.dp),
+                border = BorderStroke(2.dp, color = colorResource(id = R.color.purple_500))
+            ) {
                 Row(
                     modifier
                         .fillMaxWidth()
-                        .padding(8.dp)) {
-                    CoilImage(imageModel = article.urlToImage,modifier = Modifier.size(100.dp),placeHolder = painterResource(
-                        id = R.drawable.breaking_news),error = painterResource(
-                        id = R.drawable.breaking_news) )
-                    Column(modifier.padding(8.dp) ) {
-                        Text(text = article.title ?: "Not Available", fontWeight = FontWeight.Bold,
-                            maxLines = 3,overflow = TextOverflow.Ellipsis)
-                        Row(modifier.fillMaxWidth(),horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text(text = article.author?:"Not Available")
-                            Text(text = MockData.stringToDate(article.publishedAt?:"2021-11-10T14:25:20Z").getTimeAgo())
+                        .padding(8.dp)
+                ) {
+                    CoilImage(
+                        imageModel = article.urlToImage,
+                        modifier = Modifier.size(100.dp),
+                        placeHolder = painterResource(
+                            id = R.drawable.breaking_news
+                        ),
+                        error = painterResource(
+                            id = R.drawable.breaking_news
+                        )
+                    )
+                    Column(modifier.padding(8.dp)) {
+                        Text(
+                            text = article.title ?: "Not Available", fontWeight = FontWeight.Bold,
+                            maxLines = 3, overflow = TextOverflow.Ellipsis
+                        )
+                        Row(
+                            modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(text = article.author ?: "Not Available")
+                            Text(
+                                text = MockData.stringToDate(
+                                    article.publishedAt ?: "2021-11-10T14:25:20Z"
+                                ).getTimeAgo()
+                            )
                         }
                     }
                 }
@@ -109,11 +152,13 @@ fun ArticleContent(articles: List<TopNewsArticle>, modifier:Modifier = Modifier)
 fun ArticleContentPreview() {
     ArticleContent(
         articles =
-        listOf(TopNewsArticle(
-            author = "Namita Singh",
-            title = "Cleo Smith news — live: Kidnap suspect 'in hospital again' as 'hard police grind' credited for breakthrough - The Independent",
-            description = "The suspected kidnapper of four-year-old Cleo Smith has been treated in hospital for a second time amid reports he was “attacked” while in custody.",
-            publishedAt = "2021-11-04T04:42:40Z"
+        listOf(
+            TopNewsArticle(
+                author = "Namita Singh",
+                title = "Cleo Smith news — live: Kidnap suspect 'in hospital again' as 'hard police grind' credited for breakthrough - The Independent",
+                description = "The suspected kidnapper of four-year-old Cleo Smith has been treated in hospital for a second time amid reports he was “attacked” while in custody.",
+                publishedAt = "2021-11-04T04:42:40Z"
+            )
         )
-        ))
+    )
 }

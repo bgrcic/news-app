@@ -10,10 +10,10 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.ClickableText
 import androidx.compose.material.Card
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.DropdownMenu
 import androidx.compose.material.DropdownMenuItem
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -22,6 +22,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -37,14 +39,20 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.example.myapplication.model.TopNewsArticle
-import com.example.myapplication.network.NewsManager
 import com.example.myapplication.R
+import com.example.myapplication.components.ErorrUI
+import com.example.myapplication.components.LoadingUI
+import com.example.myapplication.model.TopNewsArticle
+import com.example.myapplication.ui.MainViewModel
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun Sources(newsManager: NewsManager) {
+fun Sources(
+    viewModel: MainViewModel,
+    isLoading: MutableState<Boolean>,
+    isError: MutableState<Boolean>
+) {
     val items = listOf(
         "TechCrunch" to "techcrunch",
         "TalkSport" to "talksport",
@@ -53,14 +61,12 @@ fun Sources(newsManager: NewsManager) {
         "Politico" to "politico",
         "TheVerge" to "the-verge"
     )
-    Scaffold(topBar={
-        //Todo 3: Pass in TopAppBar, set the title to the source name and add drop down as an actions
+    Scaffold(topBar = {
         TopAppBar(
             title = {
-                Text(text = "${newsManager.sourceName.value} Source")
+                Text(text = "${viewModel.sourceName.collectAsState().value} Source")
             },
             actions = {
-                //Todo 4: we create a remember variable to control the show and dismisgs of the drop down
                 var menuExpanded by remember { mutableStateOf(false) }
 
                 IconButton(onClick = { menuExpanded = true }) {
@@ -75,7 +81,7 @@ fun Sources(newsManager: NewsManager) {
                     ) {
                         items.forEach {
                             DropdownMenuItem(onClick = {
-                                newsManager.sourceName.value = it.second
+                                viewModel.sourceName.value = it.second
                                 menuExpanded = false
                             }) {
                                 Text(it.first)
@@ -84,36 +90,58 @@ fun Sources(newsManager: NewsManager) {
                     }
                 }
             }
-        )}){
+        )
+    }) {
+        when {
+            isLoading.value -> {
+                LoadingUI()
+            }
 
-        newsManager.getArticlesBySource()
-        val article = newsManager.getArticleBySource.value
-        //Todo 13: Add the Content composable and pass in articles by source
-        SourceContent(articles = article.articles?: listOf() )
+            isError.value -> {
+                ErorrUI()
+            }
 
+            else -> {
+                viewModel.getArticleBySource()
+                val articles = viewModel.getArticleBySource.collectAsState().value
+                SourceContent(articles = articles.articles ?: listOf())
+
+            }
+        }
     }
 }
 
-//Todo 8: Create a composable to display the articles
 @Composable
-fun SourceContent(articles:List<TopNewsArticle>) {
+fun SourceContent(articles: List<TopNewsArticle>) {
     val uriHandler = LocalUriHandler.current
-    LazyColumn{
+    LazyColumn {
         items(articles) { article ->
             val annotatedString = buildAnnotatedString {
                 pushStringAnnotation(
                     tag = "URL",
                     annotation = article.url ?: "newsapi.org"
                 )
-                withStyle(style = SpanStyle(color = colorResource(id = R.color.purple_500),textDecoration = TextDecoration.Underline)) {
+                withStyle(
+                    style = SpanStyle(
+                        color = colorResource(id = R.color.purple_500),
+                        textDecoration = TextDecoration.Underline
+                    )
+                ) {
                     append("Read Full Article Here")
                 }
                 pop()
             }
-            Card(backgroundColor = colorResource(id = R.color.purple_700),elevation = 6.dp, modifier = Modifier.padding(8.dp)) {
-                Column(modifier = Modifier
-                    .height(200.dp)
-                    .padding(end = 8.dp, start = 8.dp),verticalArrangement = Arrangement.SpaceEvenly) {
+            Card(
+                backgroundColor = colorResource(id = R.color.purple_700),
+                elevation = 6.dp,
+                modifier = Modifier.padding(8.dp)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .height(200.dp)
+                        .padding(end = 8.dp, start = 8.dp),
+                    verticalArrangement = Arrangement.SpaceEvenly
+                ) {
                     Text(
                         text = article.title ?: "Not Available",
                         fontWeight = FontWeight.Bold,
@@ -136,7 +164,7 @@ fun SourceContent(articles:List<TopNewsArticle>) {
                         ClickableText(text = annotatedString,
                             modifier = Modifier.padding(8.dp),
                             onClick = {
-                                annotatedString.getStringAnnotations(it,it).firstOrNull()
+                                annotatedString.getStringAnnotations(it, it).firstOrNull()
                                     ?.let { result ->
                                         if (result.tag == "URL") {
                                             uriHandler.openUri(result.item)
@@ -146,9 +174,11 @@ fun SourceContent(articles:List<TopNewsArticle>) {
                     }
                 }
             }
-        }}}
+        }
+    }
+}
 
-//Todo 12: create preview for source content
+
 @Preview(showBackground = true)
 @Composable
 fun SourceContentPreview() {

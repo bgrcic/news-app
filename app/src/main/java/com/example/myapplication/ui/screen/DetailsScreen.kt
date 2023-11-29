@@ -92,7 +92,8 @@ fun InfoWithIcon(icon: ImageVector, info: String) {
     Row {
         Icon(
             icon,
-            contentDescription = "Author",
+            contentDescription = "A" +
+                    "uthor",
             modifier = Modifier.padding(end = 8.dp),
             colorResource(
                 id = R.color.purple_500
